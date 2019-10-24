@@ -9,10 +9,12 @@ provider:
 
 package:
   include:
-    - handler.py
+    - hell*-handler.py
   exclude:
      - ./**    
 
 functions:
   hello:
-    handler: handler.hello
+    handler: hello-handler.hello
+  hello2:
+    handler: hello2-handler.hello2

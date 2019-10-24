@@ -2,7 +2,7 @@ import json
 
 def hello(event, context):
 
-    print("processing request")
+    print("processing 'Hello World' request")
     
     body = {
         "message": "Hello World",

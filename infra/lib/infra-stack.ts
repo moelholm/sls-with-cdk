@@ -1,29 +1,34 @@
 import iam = require('@aws-cdk/aws-iam');
 import core = require('@aws-cdk/core');
 
-// Configure this
-const SERVERLESS_SERVICE_NAME = 'cautious-invention';
-const SERVERLESS_FUNCTION_NAME = 'hello';
-const SERVERLESS_ENV = 'dev';
-
-// Derived values
-const SERVERLESS_STACK_NAME = `${SERVERLESS_SERVICE_NAME}-${SERVERLESS_ENV}`;
-const SERVERLESS_IAM_GROUP_NAME = `${SERVERLESS_SERVICE_NAME}`;
-
-// Main infrastructure stack
+// Main infrastructure stack - specific to the serverless project configuration
 export class InfraStack extends core.Stack {
 
-  constructor(scope: core.App, id: string, props?: core.StackProps) {
+  private serverlessService: string;
+  private serverlessEnv: string;
+  private serverlessStackName: string;
+
+  constructor(scope: core.App, id: string, props: core.StackProps, serverlessConfig: any) {
     super(scope, id, props);
 
-    const group = new iam.Group(this, SERVERLESS_IAM_GROUP_NAME, {
-      groupName: SERVERLESS_IAM_GROUP_NAME,
-    });
+    // Get serverless project information - so that it can be used to name AWS resources
+    this.serverlessService = serverlessConfig.service;
+    this.serverlessEnv = serverlessConfig.serviceEnv;
+    this.serverlessStackName = `${this.serverlessService}-${this.serverlessEnv}`;
 
-    group.attachInlinePolicy(this.createCloudFormationPolicy());
+    // Group containing permissions for a specific serverless service in a specific environment
+    const groupName = `${this.serverlessService}-${this.serverlessEnv}`;
+    const group = new iam.Group(this, groupName, {
+      groupName: groupName,
+    });
+    //      Policies for the entire service
     group.attachInlinePolicy(this.createIamPolicy());
-    group.attachInlinePolicy(this.createLambdaPolicy());
-    group.attachInlinePolicy(this.createCloudWatchLogsPolicy());
+    group.attachInlinePolicy(this.createCloudFormationPolicy());
+    for (const functionName of Object.keys(serverlessConfig.functions)) {
+      //    Policies per function in the service
+      group.attachInlinePolicy(this.createLambdaPolicy(functionName));
+      group.attachInlinePolicy(this.createCloudWatchLogsPolicy(functionName));
+    }
   }
 
   private createCloudFormationPolicy(): iam.Policy {
@@ -31,7 +36,7 @@ export class InfraStack extends core.Stack {
     return new iam.Policy(this, policyName, {
       policyName: policyName,
       statements: [
-        this.createPolicyStatement(['cloudformation:*'], [`arn:aws:cloudformation:${this.region}:${this.account}:stack/${SERVERLESS_STACK_NAME}/*`]),
+        this.createPolicyStatement(['cloudformation:*'], [`arn:aws:cloudformation:${this.region}:${this.account}:stack/${this.serverlessStackName}/*`]),
       ],
     });
   }
@@ -48,13 +53,13 @@ export class InfraStack extends core.Stack {
           'iam:PutRolePolicy',
           'iam:DeleteRolePolicy',
           'iam:DeleteRole',
-        ], [`arn:aws:iam::${this.account}:role/${SERVERLESS_STACK_NAME}-${this.region}-lambdaRole`]),
+        ], [`arn:aws:iam::${this.account}:role/${this.serverlessStackName}-${this.region}-lambdaRole`]),
       ],
     });
   }
 
-  private createLambdaPolicy(): iam.Policy {
-    const policyName = 'lambda';
+  private createLambdaPolicy(functionName: string): iam.Policy {
+    const policyName = `lambda-${functionName}`;
     return new iam.Policy(this, policyName, {
       policyName: policyName,
       statements: [
@@ -70,21 +75,21 @@ export class InfraStack extends core.Stack {
           'lambda:PublishVersion',
           'lambda:DeleteFunctionConcurrency',
           'lambda:PutFunctionConcurrency',
-        ], [`arn:aws:lambda:${this.region}:${this.account}:function:${SERVERLESS_STACK_NAME}-${SERVERLESS_FUNCTION_NAME}`]),
+        ], [`arn:aws:lambda:${this.region}:${this.account}:function:${this.serverlessStackName}-${functionName}`]),
       ],
     });
   }
 
-  private createCloudWatchLogsPolicy(): iam.Policy {
-    const policyName = 'cloudwatch-logs';
+  private createCloudWatchLogsPolicy(functionName: string): iam.Policy {
+    const policyName = `cloudwatch-logs-${functionName}`;
     return new iam.Policy(this, policyName, {
       policyName: policyName,
       statements: [
-        this.createPolicyStatement(['logs:DescribeLogStreams', 'logs:DeleteLogGroup'], [`arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${SERVERLESS_STACK_NAME}-${SERVERLESS_FUNCTION_NAME}:log-stream:`]),
+        this.createPolicyStatement(['logs:DescribeLogStreams', 'logs:DeleteLogGroup'], [`arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${this.serverlessStackName}-${functionName}:log-stream:`]),
         this.createPolicyStatement([
           'logs:CreateLogStream',
           'logs:FilterLogEvents'
-        ], [`arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${SERVERLESS_STACK_NAME}-${SERVERLESS_FUNCTION_NAME}:*`]),
+        ], [`arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${this.serverlessStackName}-${functionName}:*`]),
       ],
     });
   }

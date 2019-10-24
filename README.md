@@ -2,7 +2,7 @@
 
 This example combines a _serverless_ project with an _AWS CDK_ project. 
 
-- _serverless_ is used to develop/deploy AWS Lambda functions. This code is based _Python 3.x_.
+- _serverless_ is used to develop/deploy AWS Lambda functions. This code is based on _Python 3.x_.
 - _AWS CDK_ is used to develop/deploy the AWS infrastructure required by _serverless_. This code is based on _Typescript_.
 
 I have this impression that people tend to use ADMIN privileged IAM users for working with 
