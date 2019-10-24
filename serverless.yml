@@ -9,7 +9,7 @@ provider:
   region: eu-north-1
   
   deploymentBucket:
-    name: cautious-invention-deployments # Overrides framework default value
+    name: serverless-deployments-est2019
 
 # Add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
