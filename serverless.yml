@@ -6,7 +6,10 @@ provider:
 
 # Overwrite defaults here
 #  stage: dev
-#  region: us-east-1
+  region: eu-north-1
+  
+  deploymentBucket:
+    name: cautious-invention-deployments # Overrides framework default value
 
 # Add statements to the Lambda function's IAM Role here
 #  iamRoleStatements:
@@ -32,9 +35,8 @@ provider:
 package:
   include:
     - handler.py
-#  exclude:
-#    - exclude-me.py
-#    - exclude-me-dir/**
+  exclude:
+     - ./**    
 
 functions:
   hello:

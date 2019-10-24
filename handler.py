@@ -1,6 +1,9 @@
 import json
 
 def hello(event, context):
+
+    print("processing request")
+    
     body = {
         "message": "Hello World",
         "input": event
@@ -12,11 +15,3 @@ def hello(event, context):
     }
 
     return response
-
-    # Use this if you don't use the http event 
-    """
-    return {
-        "message": "Hello World",
-        "event": event
-    }
-    """
