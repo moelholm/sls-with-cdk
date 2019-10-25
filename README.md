@@ -9,22 +9,27 @@ This code is based on _Python 3.x_
 This code is based on _Typescript_
 
 ## Background
-My impression is that many developers tend to use ADMIN privileged AWS IAM users for working with 
-serverless technologies. Simply because it is the easy way and "it just works". 
+My impression is that many developers tend to use admin privileged AWS IAM users (😱) for working 
+with serverless technologies. Simply because it is the easy way and "it just works". 
 
 This project doesn't do that. Instead it attempts to apply the _principle of least privilege_: It 
 uses AWS (IAM) groups granted only permissions with the least privileges necessary in order to work. 
 Where possible, it also attempts to scope the permissions to the most specific AWS resources 
 necessary.
 
+Examine this repository, because:
+
+- You want to see what permissions _serverless framework_ requires. Then use this as inspiration for
+configuring it in your own project
+
+- You want to see what infrastructure code with AWS CDK looks like.
+
 _It is possible to narrow the privileges a bit more (for S3 for example). Ping me on
-Twitter/Email if you have some ideas for improving this. Or better yet; create a PR. _
+Twitter/Email if you have some ideas for improving this. Or better yet; create a PR._
 
 ## About the code
 
 ### Serverless framework application code
-
-About the files: 
 
 - `./hello-handler.py` and `./hello2-handler.py` - these are 2 x "Hello World"(ish) AWS Lambda 
 functions
@@ -36,8 +41,6 @@ functions
 The infrastructure code is based on AWS CDK and implemented with Typescript. The AWS CDK
 is then used to generate normal AWS CloudFormation templates.
 
-About the files:
-
 - `./infra/bin/infra.ts` - the main infrastructure script defining which AWS CloudFormation stacks
 gets installed
 
@@ -47,9 +50,14 @@ gets installed
  concrete _serverless framework_ project
 
  - `./infra/lib/infra-stack.ts` - defines an AWS CloudFormation stack which creates the AWS IAM 
- group that must be assigned to the app user (AWS IAM User) you want to use when working with the
- _serverless framework_ tool. The group is assigned specific AWS IAM permissions (not admin power
- 😱)
+ group specific to the _serverless framework_ project. The group is assigned specific AWS IAM 
+ permissions (not admin power 😱). The code is dynamic: it adapts the infrastructure to the 
+ configuration in _serverless.yml_. It uses information such as the service name and the function
+ names when generating the infrastructure. A remarkable difference to traditional declarative 
+ approaches, such as AWS CloudFormation or Terraform.
+
+Assign the generated IAM groups to your favorite AWS IAM User (app user). You can then use that user
+for working with the _serverless framework_ tool. 
 
 ## Try it (only 2 super simple steps 😇)
 
@@ -60,7 +68,7 @@ Complete the following to steps in order to test this.
 Firstly, ensure that you have the following tools installed:
 
 - `npm` - the node package manager etc. (used by the AWS CDK implementation in this project)
-- `sls` - the serverless framework tool (this is the framework used for working with the AWS 
+- `sls` - the _serverless framework_ tool (this is the framework used for working with the AWS 
 Lambda functions in this project)
 
 ### Step 1) Install the infrastructure
