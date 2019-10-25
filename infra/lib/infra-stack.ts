@@ -4,31 +4,28 @@ import core = require('@aws-cdk/core');
 // Main infrastructure stack - specific to the serverless project configuration
 export class InfraStack extends core.Stack {
 
-  private serverlessService: string;
-  private serverlessEnv: string;
   private serverlessStackName: string;
 
   constructor(scope: core.App, id: string, props: core.StackProps, serverlessConfig: any) {
     super(scope, id, props);
 
     // Get serverless project information - so that it can be used to name AWS resources
-    this.serverlessService = serverlessConfig.service;
-    this.serverlessEnv = serverlessConfig.serviceEnv;
-    this.serverlessStackName = `${this.serverlessService}-${this.serverlessEnv}`;
+    const serverlessService = serverlessConfig.service;
+    const serverlessEnv = serverlessConfig.serviceEnv;
+    this.serverlessStackName = `${serverlessService}-${serverlessEnv}`;
 
     // Group containing permissions for a specific serverless service in a specific environment
-    const groupName = `${this.serverlessService}-${this.serverlessEnv}`;
+    const groupName = `${serverlessService}-${serverlessEnv}`;
     const group = new iam.Group(this, groupName, {
       groupName: groupName,
     });
-    //      Policies for the entire service
+    //    Policies for the entire service
     group.attachInlinePolicy(this.createIamPolicy());
     group.attachInlinePolicy(this.createCloudFormationPolicy());
-    for (const functionName of Object.keys(serverlessConfig.functions)) {
-      //    Policies per function in the service
-      group.attachInlinePolicy(this.createLambdaPolicy(functionName));
-      group.attachInlinePolicy(this.createCloudWatchLogsPolicy(functionName));
-    }
+    //    Policies per function in the service
+    const functionNames = Object.keys(serverlessConfig.functions);
+    group.attachInlinePolicy(this.createLambdaPolicy(functionNames));
+    group.attachInlinePolicy(this.createCloudWatchLogsPolicy(functionNames));
   }
 
   private createCloudFormationPolicy(): iam.Policy {
@@ -58,8 +55,8 @@ export class InfraStack extends core.Stack {
     });
   }
 
-  private createLambdaPolicy(functionName: string): iam.Policy {
-    const policyName = `lambda-${functionName}`;
+  private createLambdaPolicy(functionNames: string[]): iam.Policy {
+    const policyName = `lambda`;
     return new iam.Policy(this, policyName, {
       policyName: policyName,
       statements: [
@@ -75,22 +72,22 @@ export class InfraStack extends core.Stack {
           'lambda:PublishVersion',
           'lambda:DeleteFunctionConcurrency',
           'lambda:PutFunctionConcurrency',
-        ], [`arn:aws:lambda:${this.region}:${this.account}:function:${this.serverlessStackName}-${functionName}`]),
+        ], functionNames.map(functionName => `arn:aws:lambda:${this.region}:${this.account}:function:${this.serverlessStackName}-${functionName}`)
+        ),
       ],
     });
   }
 
-  private createCloudWatchLogsPolicy(functionName: string): iam.Policy {
-    const policyName = `cloudwatch-logs-${functionName}`;
+  private createCloudWatchLogsPolicy(functionNames: string[]): iam.Policy {
+    const policyName = `cloudwatch-logs`;
     return new iam.Policy(this, policyName, {
       policyName: policyName,
       statements: [
-        this.createPolicyStatement(['logs:DescribeLogStreams', 'logs:DeleteLogGroup'], [`arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${this.serverlessStackName}-${functionName}:log-stream:`]),
-        this.createPolicyStatement([
-          'logs:CreateLogStream',
-          'logs:FilterLogEvents'
-        ], [`arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${this.serverlessStackName}-${functionName}:*`]),
-      ],
+        this.createPolicyStatement(['logs:DescribeLogStreams', 'logs:DeleteLogGroup'],
+          functionNames.map(functionName => `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${this.serverlessStackName}-${functionName}:log-stream:`)),
+        this.createPolicyStatement(['logs:CreateLogStream', 'logs:FilterLogEvents'],
+          functionNames.map(functionName => `arn:aws:logs:${this.region}:${this.account}:log-group:/aws/lambda/${this.serverlessStackName}-${functionName}:*`))
+      ]
     });
   }
 
