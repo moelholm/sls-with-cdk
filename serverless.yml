@@ -1,4 +1,4 @@
-service: cautious-invention
+service: sls-with-cdk
 
 provider:
   name: aws

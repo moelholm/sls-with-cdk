@@ -1,22 +1,21 @@
 # Infrastructure code
 
 This directory contains the AWS CDK infrastructure code that must be run before you can
-deploy the application services (lambda functions i.e.). More concretely it configures the following:
+deploy the application services (lambda functions i.e.). It configures the following:
 
-- S3 bucket `cautious-invention-deployments`: this is where _serverless_ installs generated AWS CloudFormation scripts
-- IAM Group `cautious-invention`: this group is configured with the IAM permissions required by the _serverless_ CLI tool
+- An S3 bucket: this is where _serverless_ installs deployments
+- 2 x IAM Groups: `serverless` and a project specific  one.
 
-Find the core infrastructure code in `lib/infra-stack.ts`.
+The first group contains generic permissions required by serverless: access to the S3 bucket etc.).
+
+The second group contains permissions specific to the serverless project: access to the cloud 
+formation stack, lambda function, cloudwatch log group, etc.
+
+PRO-TIP: Find the core infrastructure code in `lib/serverless-stack.ts` and `lib/infra-stack.ts`. All
+other files are basically AWS CDK framework related files caused by the typescript runtime
+environment.
 
 This module comes with a skeleton for unit tests (using _jest_). But non are implemented.
-
-## Instructions
-
-Generate the AWS CloudFormation template and install it into your AWS account.
-
-Create an IAM user and add it to the IAM Group. 
-
-Use that IAM user when working with the _serverless_ CLI.
 
 ## A few useful commands
 
