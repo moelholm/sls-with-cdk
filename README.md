@@ -100,4 +100,5 @@ admin permissions (which can be misused to a much higher degree).
 ### TODO
 
 - pylint
+- infra: removed hardcoded environment (in [infra.ts](infra/bin/infra.ts))
 - infra: implement unit tests
